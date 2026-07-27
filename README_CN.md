@@ -1,69 +1,129 @@
-## 📦 包简介
+# OpenArmX VR 遥操作 APK
 
-`openarmx_teleop_vr_apk` 是 OpenArmX 的 VR 遥操作 APK 安装包仓库，专门用于集中存放和分发 VR 设备端桥接应用安装包，方便用户下载并完成设备部署。
+[English](README.md) | 中文
 
-## Pico
+## 包简介
 
-## 1) 连接设备
+`openarmx_teleop_vr_apk` 用于存放和发布 OpenArmX VR 设备端应用。应用采集
+OpenXR 头显和左右手柄数据，通过局域网发送给 ROS 2，并可接收 ROS 端转发的
+机器人相机画面。
 
-1. 开启开发者模式并进入 USB 调试模式。  
-   开启开发者模式：`设置 > 关于本机 > 连续点击软件版本号`  
-   开启 USB 调试：`设置 > 开发者选项 > USB 调试`
-2. 使用 USB Type-C 数据线将 Pico 连接到 PC。
+仓库提供以下安装包：
 
-## 2) 安装 Pico 桥接 APK
+| 设备 | APK | 说明 |
+|---|---|---|
+| PICO | `openarmx_vr_pico.apk` | 当前主要维护版本 |
+| Meta Quest | `openarmx-vr-quest.apk` | Quest 设备版本 |
+
+## 已有功能
+
+### VR 数据发送
+
+- 持续发送左右手柄的位置和姿态。
+- 发送扳机、握把、A/B/X/Y 按键、左右摇杆和摇杆按键状态。
+- 持续发送头显位置和姿态。
+- 左右手柄、头部和摇杆数据相互独立，可同时发送给 ROS 端。
+- 支持夹爪模式（AIM 位姿）和手部模式（GRIP 位姿）。
+- 支持中英文界面、ROS 主机 IP 设置和 IP 保存。
+- 关键模式切换提供手柄震动反馈。
+
+APK 负责采集和发送完整输入数据。双臂、夹爪或灵巧手、头部、底盘等具体控制
+行为由配套 ROS 节点决定。
+
+### VR 视频
+
+- 默认显示头部相机主画面。
+- 可通过同一个按钮开启或关闭左右手相机画面。
+- 三路视频采用“头部在上、左右手在下”的布局。
+- 每路画面独立显示名称、分辨率、编码格式和实际解码 FPS。
+- 每路画面均可独立旋转 180 度或恢复方向。
+- 视频面板可固定在空间中，也可开启“跟随视野”。
+
+视频端口分配如下：
+
+| 视频 | UDP 端口 |
+|---|---:|
+| 头部 | `5600` |
+| 左手 | `5601` |
+| 右手 | `5602` |
+
+VR 控制数据默认发送到 ROS 主机的 UDP `5100` 端口。
+
+> 当前新增功能以 PICO 版本为准，Meta Quest 版本不保证具备完全相同的界面和功能。
+
+## 安装 PICO APK
+
+### 1. 开启调试模式
+
+1. 在 PICO 中进入 `设置 > 关于本机`，连续点击软件版本号开启开发者模式。
+2. 进入 `设置 > 开发者选项`，开启 USB 调试。
+3. 使用 USB Type-C 数据线连接 PICO 和电脑，并在头显中允许 USB 调试。
+
+### 2. 安装应用
 
 ```bash
-# 安装 ADB 工具
 sudo apt install adb
-
-# 进入 APK 所在目录
-cd <你的下载目录>
-
-# 安装桥接软件
-adb install openarmx-vr-pico.apk
+adb devices
+adb install -r openarmx_vr_pico.apk
 ```
 
-## Meta quest
+`adb devices` 应将设备状态显示为 `device`。`-r` 表示保留应用数据并覆盖安装。
+安装后，PICO 中显示的应用名称为 `openarmx_vr_pico`。
 
-安装方法和pico类似，先打开**开发者模式**，再连接设备到 PC 。再通过 adb 安装软件
+## 安装 Meta Quest APK
 
-但 Meta quest 的安装步骤非常繁琐，中国用户可以看这个视频 [打开开发者模式](https://www.bilibili.com/video/BV16hyLBpE6L?buvid=XU5420159AA4697154A0DC4C9BD238EE7A6BC&from_spmid=united.player-video-detail.relatedvideo.0&is_story_h5=false&mid=xX5%2BKHmnsR16JMhsd10cQH8FTQ%2FSZMtL1rElX6M3iMo%3D&plat_id=116&share_from=ugc&share_medium=android&share_plat=android&share_session_id=82fb3460-d9a1-4610-8286-987995bca399&share_source=WEIXIN&share_tag=s_i&spmid=united.player-video-detail.0.0&timestamp=1774775521&unique_k=MR4mqSC&up_id=32985573&vd_source=b22b744a9e6ff37e0464bd12a5e08df2)
+Meta Quest 同样需要先开启开发者模式和 USB 调试，然后执行：
 
+```bash
+adb devices
+adb install -r openarmx-vr-quest.apk
+```
+
+中国用户可参考：[开启 Meta Quest 开发者模式](https://www.bilibili.com/video/BV16hyLBpE6L/)
+
+## 基本使用流程
+
+1. 确保 VR 设备和 ROS 主机位于同一局域网。
+2. 在 ROS 主机执行 `hostname -I` 获取主机 IP。
+3. 在 VR 应用中填写 ROS 主机 IP 并确认连接。
+4. 启动 ROS 端 VR 桥接与遥操作节点。
+5. 需要视频时，启动 ROS 端视频转发节点，再在 VR 中点击“打开视频”。
+
+配套 ROS 包：
+
+- `openarmx_teleop_bridge_vr`：接收 VR UDP 数据并发布 ROS 2 话题。
+- `openarmx_teleop_vr`：根据 VR 数据执行双臂遥操作控制。
+- `openarmx_head_vision_h264`：编码并转发头部及左右手相机画面。
+
+详细启动参数和命令请查看上述 ROS 包内的 README。
 
 ## 许可证
 
-本作品采用知识共享 署名-非商业性使用-相同方式共享 4.0 国际许可协议 (CC BY-NC-SA 4.0) 进行许可。
+本作品采用知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议
+（CC BY-NC-SA 4.0）进行许可。
 
-版权所有 (c) 2026 成都长数机器人有限公司 (Chengdu Changshu Robot Co., Ltd.)
+版权所有 (c) 2026 成都长数机器人有限公司
 
-详情请参阅 [LICENSE_CN.md](LICENSE) 文件或访问：http://creativecommons.org/licenses/by-nc-sa/4.0/
+详情请参阅 [LICENSE](LICENSE) 或访问：<http://creativecommons.org/licenses/by-nc-sa/4.0/>
 
 ## 作者
 
-- **Li QingRan** (李青燃)
-- 公司: Chengdu Changshu Robot Co., Ltd. (成都长数机器人有限公司)
-- 网站: https://openarmx.com/
+- **Li QingRan**（李青燃）
+- 公司：成都长数机器人有限公司
+- 网站：<https://openarmx.com/>
 
 ## 版本
 
-**当前版本**：6.0.0
+**当前版本：6.0.0**
 
-## 致谢
-
-本包是 OpenArmX 机器人平台生态系统的一部分，专为协作机器人领域的研究和工业应用而开发。
-
----
-
-## 📞 联系我们
+## 联系我们
 
 ### 成都长数机器人有限公司
-**Chengdu Changshu Robotics Co., Ltd.**
 
 | 联系方式 | 信息 |
-|---------|------|
-| 📧 邮箱 | openarmrobot@gmail.com |
-| 📱 电话/微信 | +86-17746530375 |
-| 🌐 官网 | <https://openarmx.com/> |
-| 📍 地址 | 天津经济技术开发区西区新业八街11号华诚机械厂 |
-| 👤 联系人 | 王先生 |
+|---|---|
+| 邮箱 | openarmrobot@gmail.com |
+| 电话/微信 | +86-17746530375 |
+| 官网 | <https://openarmx.com/> |
+| 地址 | 天津经济技术开发区西区新业八街 11 号华诚机械厂 |
+| 联系人 | 王先生 |
